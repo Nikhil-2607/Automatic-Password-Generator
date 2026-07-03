@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Generator</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    min-height: 100vh;
+    background: #14161a;
+    color: #e6e6e6;
+    font-family: 'SF Mono', Consolas, Menlo, monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .card{
+    width: 100%;
+    max-width: 380px;
+    background: #1c1f26;
+    border: 1px solid #2c313a;
+    border-radius: 10px;
+    padding: 28px;
+  }
+
+  h1{
+    font-size: 18px;
+    margin: 0 0 20px;
+    text-align: center;
+  }
+
+  /* ---------- password display ---------- */
+  .password-box{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #101318;
+    border: 1px solid #2c313a;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+
+  #passwordOutput{
+    flex: 1;
+    font-size: 16px;
+    letter-spacing: 0.03em;
+    color: #7fffd4;      /* mint accent, just for the generated text */
+    word-break: break-all;
+  }
+
+  #copyBtn{
+    background: none;
+    border: 1px solid #2c313a;
+    color: #e6e6e6;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  #copyBtn:hover{
+    border-color: #7fffd4;
+    color: #7fffd4;
+  }
+
+
+  .control-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  input[type="range"]{
+    width: 60%;
+  }
+
+  .checkbox-row{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .checkbox-row input{
+    accent-color: #7fffd4;
+  }
+
+  #generateBtn{
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    background: #7fffd4;
+    color: #0b1a15;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  #generateBtn:hover{
+    background: #99ffe0;
+  }
+
+  .warning{
+    font-size: 11px;
+    color: #ff8080;
+    text-align: center;
+    margin-top: 10px;
+    min-height: 14px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Password Generator</h1>
+
+    <div class="password-box">
+      <span id="passwordOutput">Click Generate</span>
+      <button id="copyBtn" type="button">Copy</button>
+    </div>
+
+    <div class="control-row">
+      <label for="lengthSlider">Length: <span id="lengthValue">12</span></label>
+      <input type="range" id="lengthSlider" min="4" max="32" value="12">
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="includeUppercase" checked>
+      <label for="includeUppercase">Uppercase (A-Z)</label>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="includeLowercase" checked>
+      <label for="includeLowercase">Lowercase (a-z)</label>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="includeNumbers" checked>
+      <label for="includeNumbers">Numbers (0-9)</label>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="includeSymbols">
+      <label for="includeSymbols">Symbols (!@#$%)</label>
+    </div>
+
+    <button id="generateBtn" type="button">Generate Password</button>
+
+    <div id="warningMsg" class="warning"></div>
+  </div>
+
+<script>
+  const CHAR_SETS = {
+    uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    lowercase: 'abcdefghijklmnopqrstuvwxyz',
+    numbers:   '0123456789',
+    symbols:   '!@#$%^&*()_-+=?'
+  };
+  const passwordOutput = document.getElementById('passwordOutput');
+  const copyBtn = document.getElementById('copyBtn');
+  const generateBtn = document.getElementById('generateBtn');
+  const lengthSlider = document.getElementById('lengthSlider');
+  const lengthValue = document.getElementById('lengthValue');
+  const warningMsg = document.getElementById('warningMsg');
+
+  const checkboxes = {
+    uppercase: document.getElementById('includeUppercase'),
+    lowercase: document.getElementById('includeLowercase'),
+    numbers:   document.getElementById('includeNumbers'),
+    symbols:   document.getElementById('includeSymbols')
+  };
+  lengthSlider.addEventListener('input', () => {
+    lengthValue.textContent = lengthSlider.value;
+  });
+
+  function buildCharacterPool() {
+    let pool = '';
+    for (const key in checkboxes) {
+      if (checkboxes[key].checked) {
+        pool += CHAR_SETS[key];
+      }
+    }
+    return pool;
+  }
+
+  function generatePassword(pool, length) {
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      password += pool[randomIndex];
+    }
+    return password;
+  }
+
+  function handleGenerate() {
+    const pool = buildCharacterPool();
+    const length = Number(lengthSlider.value);
+    if (pool === '') {
+      warningMsg.textContent = 'Select at least one character type.';
+      passwordOutput.textContent = '—';
+      return;
+    }
+
+    warningMsg.textContent = '';
+    passwordOutput.textContent = generatePassword(pool, length);
+  }
+
+  function handleCopy() {
+    const text = passwordOutput.textContent;
+    if (text === 'Click Generate' || text === '—') return;
+
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1200);
+    });
+  }
+  generateBtn.addEventListener('click', handleGenerate);
+  copyBtn.addEventListener('click', handleCopy);
+</script>
+
+</body>
+</html>
